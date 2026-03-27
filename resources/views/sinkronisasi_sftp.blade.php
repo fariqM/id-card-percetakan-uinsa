@@ -101,6 +101,8 @@
         fetch('{{ route("foto.sync.data") }}')
             .then(res => res.json())
             .then(data => {
+                console.log(data);
+                
                 if(data.success) {
                     unsyncedData = data.data;
                     totalItems = unsyncedData.length;
@@ -126,7 +128,8 @@
         btnStart.disabled = true;
         btnStart.innerText = "⏳ PROSES SINKRONISASI BERJALAN...";
         addLog("=== MEMULAI SINKRONISASI SFTP ===");
-
+        console.log(totalItems);
+        return
         for (let i = 0; i < totalItems; i++) {
             let nim = unsyncedData[i];
             
