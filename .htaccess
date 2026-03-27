@@ -1,0 +1,20 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+    
+    # Mengunci pergerakan URL di dalam folder id-card
+    RewriteBase /id-card/
+
+    # Mencegah error garis miring di akhir URL (Trailing Slashes)
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Menyerahkan semua rute (seperti /foto) ke index.php yang baru kita buat
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
