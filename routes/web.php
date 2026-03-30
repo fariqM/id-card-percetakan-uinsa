@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Mahasiswa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FotoKTMController;
 use Illuminate\Support\Facades\Validator;
@@ -61,6 +63,23 @@ Route::middleware('auth')->group(function () {
         $apiMsg = $data['message'];
         if ($data['status'] !== 'success') {
             return response(['success' => false, 'data' => null, 'message' => 'Telah terjadi kesalahan internal! ' . "\nAPI-SERVICE-MESSAGE : $apiMsg"], 404);
+        }
+        try {
+            $mhs = Mahasiswa::firstOrCreate(['nim' => $nim], [
+                'nama' => $data['data']['nama'],
+                'jk' => $data['data']['jk'],
+                'fakultas' => $data['data']['fakultas'],
+                'prodi' => $data['data']['prodi'],
+                'lokasi_foto' => 'thumb',
+                'status_sync' => 0
+            ]);
+        } catch (\Throwable $th) {
+            Log::error('Gagal mendapatkan / create data mahasiswa', [
+                'timestamp' => time(),
+                'msg' => $th->getMessage(),
+                'trace' => $th->getTrace()
+            ]);
+            return response(['success' => false, 'data' => null, 'message' => 'Telah terjadi kesalahan internal! ' . "\nAPI-SERVICE-MESSAGE : $apiMsg", 'sys' => $th->getMessage()], 404);
         }
         return response(['success' => true, 'detail_mhs' => $data['data']]);
     })->name('get.mhs.detail');
