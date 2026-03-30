@@ -8,26 +8,39 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto align-items-center fw-semibold">
-                <li class="nav-item me-2">
-                    <a class="nav-link {{ request()->is('/') ? 'active text-primary fw-bold' : 'text-secondary' }}" href="{{ url('/') }}">
-                        🏠 Dashboard
-                    </a>
-                </li>
-                <li class="nav-item me-2">
-                    <a class="nav-link {{ request()->is('foto') ? 'active text-primary fw-bold' : 'text-secondary' }}" href="{{ url('/foto') }}">
-                        📸 Panel Foto
-                    </a>
-                </li>
-                <li class="nav-item me-3">
-                    <a class="nav-link {{ request()->is('foto/sinkronisasi') ? 'active text-primary fw-bold' : 'text-secondary' }}" href="{{ url('/foto/sinkronisasi') }}">
-                        🔄 Sinkronisasi SFTP
-                    </a>
-                </li>
-                <li class="nav-item border-start ps-3 my-2 my-lg-0">
-                    <a class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold" href="/cetak">
-                        🖨️ Layanan Cetak
-                    </a>
-                </li>
+                @if (Auth::check())
+                    <li class="nav-item me-2">
+                        <a class="nav-link {{ request()->is('/') ? 'active text-primary fw-bold' : 'text-secondary' }}"
+                            href="{{ url('/') }}">
+                            🏠 Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item me-2">
+                        <a class="nav-link {{ request()->is('foto') ? 'active text-primary fw-bold' : 'text-secondary' }}"
+                            href="{{ url('/foto') }}">
+                            📸 Panel Foto
+                        </a>
+                    </li>
+                    <li class="nav-item me-3">
+                        <a class="nav-link {{ request()->is('foto/sinkronisasi') ? 'active text-primary fw-bold' : 'text-secondary' }}"
+                            href="{{ url('/foto/sinkronisasi') }}">
+                            🔄 Sinkronisasi SFTP
+                        </a>
+                    </li>
+                    <li class="nav-item border-start ps-3 my-2 my-lg-0">
+                        <a class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold" href="/cetak">
+                            🖨️ Layanan Cetak
+                        </a>
+                    </li>
+                    <li class="nav-item border-start ps-3 my-2 my-lg-0">
+                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold">
+                                Logout ➜
+                            </button>
+                        </form>
+                    </li>
+                @endif
             </ul>
         </div>
     </div>
