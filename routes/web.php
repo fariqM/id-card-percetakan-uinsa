@@ -16,7 +16,7 @@ require __DIR__ . '/auth.php';
 |--------------------------------------------------------------------------
 */
 Route::get('/foto/sinkronisasi/data', [FotoKTMController::class, 'getUnsyncedData'])->name('foto.sync.data'); // Open API
-Route::get('/foto/sinkronisasi/data/flag-sync/{nim}', [FotoKTMController::class, 'flagSync'])->name('foto.sync.data'); // Open API
+Route::get('/foto/sinkronisasi/data/flag-sync/{nim}', [FotoKTMController::class, 'flagSync']); // Open API
 
 // https://id-card-percetakan.test/foto/sinkronisasi/data/flag-sync/{NIM-Mahasiswa}?success=1 
 
