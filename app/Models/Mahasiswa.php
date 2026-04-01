@@ -19,6 +19,7 @@ class Mahasiswa extends Model
         'prodi',
         'file_foto',
         'status_foto',
-        'foto_path'
+        'foto_path',
+        'status_sync'
     ];
 }

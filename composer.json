@@ -10,7 +10,8 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "league/flysystem-sftp-v3": "^3.31"
+        "league/flysystem-sftp-v3": "^3.31",
+        "opcodesio/log-viewer": "^3.24"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

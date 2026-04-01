@@ -27,6 +27,12 @@
                             🔄 Sinkronisasi SFTP
                         </a>
                     </li>
+                     <li class="nav-item me-3">
+                        <a class="nav-link"
+                            href="/log-viewer" target="_blank">
+                          📄Log System
+                        </a>
+                    </li>
                     <li class="nav-item border-start ps-3 my-2 my-lg-0">
                         <a class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold" href="/cetak">
                             🖨️ Layanan Cetak

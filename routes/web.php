@@ -15,6 +15,11 @@ require __DIR__ . '/auth.php';
 | Web Routes
 |--------------------------------------------------------------------------
 */
+Route::get('/foto/sinkronisasi/data', [FotoKTMController::class, 'getUnsyncedData'])->name('foto.sync.data'); // Open API
+Route::get('/foto/sinkronisasi/data/flag-sync/{nim}', [FotoKTMController::class, 'flagSync'])->name('foto.sync.data'); // Open API
+
+// https://id-card-percetakan.test/foto/sinkronisasi/data/flag-sync/{NIM-Mahasiswa}?success=1 
+
 
 // 1. ROUTE DASHBOARD UTAMA (Pintu Gerbang Aplikasi)
 Route::middleware('auth')->group(function () {
@@ -34,7 +39,6 @@ Route::middleware('auth')->group(function () {
 
     // 4. ROUTE SINKRONISASI SERVER SFTP (Sinau)
     Route::get('/foto/sinkronisasi', [FotoKTMController::class, 'indexSync'])->name('foto.sync.index');
-    Route::get('/foto/sinkronisasi/data', [FotoKTMController::class, 'getUnsyncedData'])->name('foto.sync.data');
     Route::get('/foto/sinkronisasi/cek-sftp', [FotoKTMController::class, 'checkSftpConnection'])->name('foto.sync.check-sftp');
     Route::post('/foto/sinkronisasi/proses', [FotoKTMController::class, 'processSync'])->name('foto.sync.proses');
 

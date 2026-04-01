@@ -9,18 +9,26 @@
 //  * ke direktori lokal siakad. Dijalankan setiap 3 menit via cron job.
 //  */
 
+// import encode algoritm
+require __DIR__ . '/encode.php';
 // ============================================================
 // KONFIGURASI
 // ============================================================
 
-define('BASE_API_URL',    'https://id-card-percetakan.test');
+define('APP_ENV', 'development');
+define('BASE_API_URL', 'https://id-card-percetakan.test');
 define('FOTO_SOURCE_URL', BASE_API_URL . '/storage/foto_maba/');
-define('API_SYNC_DATA',   BASE_API_URL . '/foto/sinkronisasi/data');
-define('API_FLAG_URL',    BASE_API_URL . '/foto/sinkronisasi/data/flag-sync/');
+define('API_SYNC_DATA', BASE_API_URL . '/foto/sinkronisasi/data');
+define('API_FLAG_URL', BASE_API_URL . '/foto/sinkronisasi/data/flag-sync/');
 
 // Direktori tujuan penyimpanan foto
-define('DIR_UTAMA',       '/var/www/html/siakad/uploads/fotomhs/');
-define('DIR_THUMB',       '/var/www/html/siakad/uploads/fotomhs/thumb/'); // Opsional: comment baris ini jika tidak diperlukan
+if (APP_ENV === 'production') {
+    define('DIR_UTAMA', '/var/www/html/siakad/uploads/fotomhs/');
+    define('DIR_THUMB', '/var/www/html/siakad/uploads/fotomhs/thumb/'); // Opsional: comment baris ini jika tidak diperlukan
+} else {
+    define('DIR_UTAMA', __DIR__ . '/fotomhs/');
+    define('DIR_THUMB', __DIR__ . '/fotomhs/thumb/'); // Opsional: comment baris ini jika tidak diperlukan
+}
 
 // Log file (disimpan di direktori yang sama dengan file .php ini)
 define('LOG_FILE', __DIR__ . '/sinkronisasi_foto.log');
@@ -42,8 +50,8 @@ define('CURL_TIMEOUT', 30);
  */
 function tulisLog(string $level, string $fungsi, string $pesan): void
 {
-    $waktu  = date('Y-m-d H:i:s');
-    $baris  = "[{$waktu}] [{$level}] [{$fungsi}] {$pesan}" . PHP_EOL;
+    $waktu = date('Y-m-d H:i:s');
+    $baris = "[{$waktu}] [{$level}] [{$fungsi}] {$pesan}" . PHP_EOL;
 
     // Tampilkan ke stdout (terlihat saat dijalankan manual / via cron dengan output redirect)
     echo $baris;
@@ -69,15 +77,15 @@ function curlGet(string $url): string|false
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_TIMEOUT        => CURL_TIMEOUT,
+        CURLOPT_TIMEOUT => CURL_TIMEOUT,
         CURLOPT_SSL_VERIFYPEER => false, // Sesuaikan jika server sudah pakai SSL valid
         CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_USERAGENT      => 'SinkronisasiFoto/1.0',
+        CURLOPT_USERAGENT => 'SinkronisasiFoto/1.0',
     ]);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error    = curl_error($ch);
+    $error = curl_error($ch);
     curl_close($ch);
 
     if ($response === false || $error) {
@@ -154,9 +162,9 @@ function ambilDataBelumSync(): array
  */
 function downloadDanSimpanFoto(string $nim): bool
 {
-    $fungsi   = 'downloadDanSimpanFoto';
+    $fungsi = 'downloadDanSimpanFoto';
     $namaFile = $nim . '.jpg';
-    $urlFoto  = FOTO_SOURCE_URL . $namaFile;
+    $urlFoto = FOTO_SOURCE_URL . $namaFile;
 
     tulisLog('INFO', $fungsi, "Mengunduh foto [{$nim}] dari: {$urlFoto}");
 
@@ -229,20 +237,23 @@ function pastikanDirAda(string $dir, string $fungsi): bool
  */
 function kirimFlagSync(string $nim, bool $sukses): void
 {
-    $fungsi    = 'kirimFlagSync';
+    $fungsi = 'kirimFlagSync';
     $nilaiFlag = $sukses ? 1 : 0;
-    $urlFlag   = API_FLAG_URL . urlencode($nim) . '?success=' . $nilaiFlag;
+    $token = generateRandomString();
+    $time = time();
+    $salt = base64_encode("$nim|$token|$time");
+    $password = "percetakanuinsa_" . strval($time);
+    $_finalToken = my_encode($salt, $password);
+    $urlFlag = API_FLAG_URL . urlencode($nim) . '?success=' . $nilaiFlag . "&_token=" . $_finalToken . "&time=" . $time;
 
     tulisLog('INFO', $fungsi, "Mengirim flag sync NIM [{$nim}] success={$nilaiFlag} ke: {$urlFlag}");
 
     $response = curlGet($urlFlag);
-
+    $data = json_decode($response, true);
     if ($response === false) {
         tulisLog('ERROR', $fungsi, "Gagal mengirim flag sync untuk NIM [{$nim}].");
         return;
     }
-
-    $data = json_decode($response, true);
 
     if (json_last_error() === JSON_ERROR_NONE && isset($data['success'])) {
         $status = $data['success'] ? 'sukses' : 'gagal (response API)';
@@ -250,6 +261,19 @@ function kirimFlagSync(string $nim, bool $sukses): void
     } else {
         tulisLog('INFO', $fungsi, "Flag sync NIM [{$nim}] terkirim. Raw response: {$response}");
     }
+}
+
+function generateRandomString($length = 8)
+{
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        // Use random_int for cryptographically secure randomness
+        $index = random_int(0, $charactersLength - 1);
+        $randomString .= $characters[$index];
+    }
+    return $randomString;
 }
 
 

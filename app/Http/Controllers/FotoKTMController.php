@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Mahasiswa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class FotoKTMController extends Controller
 {
     // --- 1. MENAMPILKAN HALAMAN OPERATOR ---
-    public function index() 
-    { 
-        return view('foto_maba'); 
+    public function index()
+    {
+        return view('foto_maba');
     }
 
     // --- 2. MENCARI DATA MAHASISWA SAAT SCAN NIM ---
@@ -26,7 +29,7 @@ class FotoKTMController extends Controller
         try {
             // PERBAIKAN: Gunakan "as jk" untuk menstandarkan nama variabel
             $mahasiswa = DB::table('mahasiswa')
-                ->select('nama', 'fakultas', 'prodi', 'JK as jk') 
+                ->select('nama', 'fakultas', 'prodi', 'JK as jk')
                 ->where('nim', $nim)
                 ->first();
 
@@ -36,18 +39,18 @@ class FotoKTMController extends Controller
                     'nama' => $mahasiswa->nama,
                     'prodi' => $mahasiswa->prodi ?? '-',
                     // PERBAIKAN: Panggil variabel jk yang sudah distandarkan
-                    'gender' => $mahasiswa->jk ?? 'L' 
+                    'gender' => $mahasiswa->jk ?? 'L'
                 ]);
             }
 
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Data NIM ' . $nim . ' tidak ditemukan dalam database.'
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Error Database: ' . $e->getMessage()
             ], 500);
         }
@@ -63,7 +66,7 @@ class FotoKTMController extends Controller
             $image_parts = explode(";base64,", $img);
             $image_base64 = base64_decode($image_parts[1]);
             $fileName = 'foto_maba/' . $nim . '.jpg';
-            
+
             // 1. Simpan di Local Storage
             Storage::disk('public')->put($fileName, $image_base64);
 
@@ -80,9 +83,9 @@ class FotoKTMController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
-	
+
     // ==========================================================
-	// AREA FUNGSI SINKRONISASI SFTP SERVER SINAU
+    // AREA FUNGSI SINKRONISASI SFTP SERVER SINAU
     // ==========================================================
 
     // 4. Menampilkan Halaman Sinkronisasi
@@ -101,26 +104,122 @@ class FotoKTMController extends Controller
                 ->pluck('nim');
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'data' => $unsyncedNims
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'DETAIL ERROR: ' . $e->getMessage()
             ]);
         }
     }
 
+    public function flagSync(Request $request, $nim)
+    {
+        $userAgent = $request->userAgent();
+        $validator = Validator::make($request->all(), [
+            '_token' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response(['success' => false, 'message' => 'payload invalid'], 422);
+        }
+
+        try {
+            $token = request('_token');
+            $time_request = request('time');
+            $decode_password = "percetakanuinsa_" . $time_request;
+            $decode_token = my_decode($token, $decode_password);
+            $base64_decode = base64_decode($decode_token);
+            $data = explode("|", $base64_decode);
+        } catch (\Throwable $th) {
+            Log::error('flagsync failed', [
+                'time' => time(),
+                'request' => $request->all(),
+                'message' => $th->getMessage(),
+                "userAgent" => $userAgent,
+                'sys' => $th->getTrace()
+            ]);
+        }
+
+        // cek nim === credential
+        if ($nim != $data[0]) {
+            Log::error('flagsync failed', [
+                'time' => time(),
+                'request' => $request->all(),
+                'message' => 'Invalid Credential',
+                "userAgent" => $userAgent
+            ]);
+            return response([
+                "success" => false,
+                "status" => "failed",
+                "message" => "Invalid Credential",
+            ], 403);
+        }
+
+        // cek user agent
+        // jangan lupa kasih pentung kalau prod
+        if (!str_contains(strtolower($userAgent), strtolower('SinkronisasiFoto'))) {
+            Log::error('flagsync failed', [
+                'time' => time(),
+                'request' => $request->all(),
+                'message' => 'Missmatch header request',
+                "userAgent" => $userAgent
+            ]);
+            return response([
+                "success" => false,
+                "status" => "failed",
+                "message" => "Missmatch header request"
+            ], 423);
+        }
+
+        // cek model apakah ada data mahasiswa
+        $model = Mahasiswa::where('nim', $nim)->first();
+        if ($model == null) {
+            Log::error('flagsync failed', [
+                'time' => time(),
+                'request' => $request->all(),
+                'message' => 'Data Mahasiswa tidak ditemukan',
+                "userAgent" => $userAgent
+            ]);
+            return response([
+                "success" => false,
+                "status" => "failed",
+                "message" => "Data Mahasiswa tidak ditemukan"
+            ], 404);
+        }
+
+
+        // cek apakah param success true
+        if (request('success') == '1') {
+            $model->update([
+                'status_sync' => 1
+            ]);
+            return response(['success' => true, 'message' => 'Flag berhasil'], 200);
+        } else {
+            Log::error('flagsync failed', [
+                'time' => time(),
+                'request' => $request->all(),
+                'message' => 'Flag tidak dilakukan karena parameter success false',
+                "userAgent" => $userAgent
+            ]);
+            return response([
+                "success" => false,
+                "status" => "failed",
+                "message" => "Flag tidak dilakukan karena parameter success false"
+            ], 424);
+        }
+    }
+
     // 6. Proses Upload 1 File ke SFTP (Estafet)
-	public function processSync(Request $request)
+    public function processSync(Request $request)
     {
         $nim = $request->input('nim');
-        
+
         // 1. Ini adalah nama file + folder di LAPTOP (XAMPP)
         $localFileName = 'foto_maba/' . $nim . '.jpg';
-        
+
         // 2. Ini adalah nama file saat mendarat di SERVER SINAU (Tanpa folder foto_maba)
         $remoteFileName = $nim . '.jpg';
 
@@ -131,13 +230,13 @@ class FotoKTMController extends Controller
 
             // Ambil dari lokal (pakai nama lokal)
             $fileContents = Storage::disk('public')->get($localFileName);
-            
+
             // Lempar ke SFTP (pakai nama remote murni)
             Storage::disk('sftp')->put($remoteFileName, $fileContents);
 
             // Update database sukses
             DB::table('mahasiswa')->where('nim', $nim)->update([
-                'status_sync' => 1 
+                'status_sync' => 1
             ]);
 
             return response()->json(['success' => true, 'nim' => $nim]);
@@ -146,20 +245,20 @@ class FotoKTMController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
-	
-	// 7. Cek Koneksi Awal SFTP
+
+    // 7. Cek Koneksi Awal SFTP
     public function checkSftpConnection()
     {
         try {
-            Storage::disk('sftp')->exists('/'); 
-            
+            Storage::disk('sftp')->exists('/');
+
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Koneksi ke Server Sinau Stabil'
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Gagal Terhubung: Cek IP, Port, atau Password SFTP.'
             ]);
         }
