@@ -107,7 +107,7 @@
             </div>
 
             <div class="col-md-4">
-                <a href="/cetak" class="menu-card" style="background-color: #f8fafc; border: 2px dashed #cbd5e1;">
+                <a href="https://layanan-cetak-percetakan.uinsa.ac.id" class="menu-card" style="background-color: #f8fafc; border: 2px dashed #cbd5e1;">
                     <div class="menu-icon" style="background: #f1f5f9;">🖨️</div>
                     <h3 class="menu-title">Layanan Cetak</h3>
                     <p class="menu-desc">Kembali ke sistem utama (Native PHP) untuk memproses tata letak dan pencetakan ID Card.</p>
