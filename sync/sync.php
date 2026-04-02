@@ -16,7 +16,7 @@ require __DIR__ . '/encode.php';
 // ============================================================
 
 define('APP_ENV', 'development');
-define('BASE_API_URL', 'https://id-card-percetakan.test');
+define('BASE_API_URL', 'https://id-card-percetakan.uinsa.ac.id');
 define('FOTO_SOURCE_URL', BASE_API_URL . '/storage/foto_maba/');
 define('API_SYNC_DATA', BASE_API_URL . '/foto/sinkronisasi/data');
 define('API_FLAG_URL', BASE_API_URL . '/foto/sinkronisasi/data/flag-sync/');

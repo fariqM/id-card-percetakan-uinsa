@@ -34,7 +34,7 @@
                         </a>
                     </li>
                     <li class="nav-item border-start ps-3 my-2 my-lg-0">
-                        <a class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold" href="/cetak">
+                        <a class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold" href="https://layanan-cetak-percetakan.uinsa.ac.id">
                             🖨️ Layanan Cetak
                         </a>
                     </li>
