@@ -61,8 +61,8 @@
             </div>
 
             <div class="d-grid mb-4">
-                <button id="btn-start" class="btn btn-primary btn-lg fw-bold" onclick="startSync()">
-                    🚀 MULAI SINKRONISASI SEKARANG
+                <button id="btn-start" class="btn btn-primary btn-lg fw-bold" onclick="startSync()" disabled>
+                    Menunggu Proses Singkronisasi
                 </button>
             </div>
 
@@ -110,7 +110,7 @@
                     
                     if(totalItems > 0) {
                         addLog(`Ditemukan ${totalItems} foto yang belum diunggah ke Server Sinau.`);
-                        btnStart.disabled = false;
+                        btnStart.disabled = true;
                     } else {
                         addLog(`Semua foto sudah sinkron dengan Server Sinau.`, 'log-success');
                         btnStart.disabled = true;
@@ -170,32 +170,6 @@
 	// 3. Cek koneksi SFTP
 	function checkSftp() {
         const badge = document.getElementById('sftp-status-badge');
-        
-        fetch('{{ route("foto.sync.check-sftp") }}')
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    // Jika sukses terkoneksi
-                    badge.className = "badge bg-success py-2 px-3 fw-bold shadow-sm";
-                    badge.innerHTML = "✅ TERHUBUNG";
-                    addLog("[Network] Koneksi SFTP Server Sinau dikonfirmasi stabil.", "log-success");
-                } else {
-                    // Jika gagal/password salah/server down
-                    badge.className = "badge bg-danger py-2 px-3 fw-bold shadow-sm";
-                    badge.innerHTML = "❌ TERPUTUS";
-                    addLog("[Network Error] " + data.message, "log-error");
-                    
-                    // Matikan tombol MULAI jika server down
-                    const btnStart = document.getElementById('btn-start');
-                    btnStart.disabled = true;
-                    btnStart.className = "btn btn-danger btn-lg py-3 fw-bold shadow";
-                    document.getElementById('btn-text').innerText = "KONEKSI SFTP GAGAL";
-                }
-            })
-            .catch(err => {
-                badge.className = "badge bg-danger py-2 px-3 fw-bold";
-                badge.innerHTML = "❌ ERROR JARINGAN LOKAL";
-            });
     }
 </script>
 </body>
