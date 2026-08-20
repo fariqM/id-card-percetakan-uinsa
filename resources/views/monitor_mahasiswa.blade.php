@@ -21,29 +21,48 @@
             box-shadow: 0 0 60px rgba(0,0,0,0.4);
         }
         
-        /* Area Kamera & Overlay */
-        .camera-section { 
-            flex: 3.5; position: relative; border-radius: 20px; overflow: hidden; 
-            background: #000; border: 2px solid rgba(255, 255, 255, 0.1);
+        /* KELOMPOK AREA KAMERA & OVERLAY */
+        .camera-wrapper {
+            flex: 1; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
         }
+        
+        .camera-section { 
+            position: relative; border-radius: 20px; overflow: hidden; 
+            background: #000; border: 4px solid #1e293b; 
+            aspect-ratio: 3 / 4; 
+            height: 100%; 
+            max-height: 85vh; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
         #video_monitor { 
-            width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); 
+            width: 100%; height: 100%; object-fit: cover; 
             filter: contrast(1.05) brightness(1.02); 
         }
         #result_monitor {
             width: 100%; height: 100%; object-fit: cover; position: absolute; 
-            top: 0; left: 0; z-index: 15; transform: scaleX(-1);
+            top: 0; left: 0; z-index: 15;
         }
         
         .look-here-indicator {
-            position: absolute; top: 25px; left: 50%; transform: translateX(-50%);
-            background: rgba(239, 68, 68, 0.9); color: white; padding: 10px; 
-            border-radius: 50px; font-weight: 800; font-size: 1.2rem; letter-spacing: 1px; 
-            z-index: 10; animation: pulse-red 2s infinite; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5);
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(239, 68, 68, 0.9); color: white; 
+            padding: 8px 24px; /* Lebih ramping/pill-shaped */
+            border-radius: 50px; font-weight: 800; 
+            font-size: clamp(0.85rem, 1.5vw, 1.1rem); /* Ukuran font dinamis mengikuti lebar layar */
+            letter-spacing: 1.5px; z-index: 10; 
+            white-space: nowrap; /* Memaksa teks selalu 1 baris */
+            max-width: 90%; /* Mencegah teks meluber keluar dari frame */
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5);
+            animation: pulse-red 2s infinite;
         }
         @keyframes pulse-red {
-            0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
-            50% { transform: translateX(-50%) scale(1.05); opacity: 1; }
+			0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+            50% { transform: translateX(-50%) scale(1.03); opacity: 1; }
             100% { transform: translateX(-50%) scale(1); opacity: 0.9; }
         }
 
@@ -56,10 +75,11 @@
             z-index: 20;
         }
 
-        .guide-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;}
-        .face-oval { position: absolute; top: 17%; left: 50%; transform: translateX(-50%); width: 30%; height: 35%; border: 8px solid rgba(0, 255, 0, 0.5); border-radius: 10% 10% 40% 40% / 60% 60% 40% 40%; }
-        .shoulder-line { position: absolute; top: 54%; left: 5%; width: 90%; height: 80%; border-top: 8px dashed rgba(0, 255, 0, 0.5); border-radius: 50% 50% 0 0; }
-        .center-dot { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background: rgba(255, 255, 255, 0.6); border-radius: 50%; }
+        /* GARIS PANDUAN DISAMAKAN PERSIS DENGAN PANEL OPERATOR */
+		.guide-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;}
+        .face-oval { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 45%; height: 50%; border: 4px solid rgba(52, 211, 153, 0.6); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; }
+        .shoulder-line { position: absolute; top: 65%; left: 10%; width: 80%; height: 30%; border-top: 4px dashed rgba(52, 211, 153, 0.6); border-radius: 50% 50% 0 0; }
+        .center-dot { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background: rgba(255, 255, 255, 0.8); border-radius: 50%; }
 
         /* Area Kanan */
         .info-section { 
@@ -83,7 +103,7 @@
 		
         @keyframes pulse-green { 
             0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); transform: scale(1); } 
-            50% { transform: scale(1.02); } /* Sedikit membesar agar lebih atraktif */
+            50% { transform: scale(1.02); } 
             70% { box-shadow: 0 0 0 15px rgba(52, 211, 153, 0); } 
             100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); transform: scale(1); } 
         }
@@ -115,17 +135,21 @@
 <body>
 
 <div class="monitor-container">
-    <div class="camera-section">
-        <div class="look-here-indicator">⬆️ TATAP KAMERA ⬆️</div>
-        <video id="video_monitor" autoplay playsinline></video>
-		
-        <img id="result_monitor" class="d-none" alt="Hasil Foto">
-        <div id="countdown-display" class="countdown-overlay d-none">3</div>
-        
-        <div class="guide-overlay">
-            <div class="face-oval"></div>
-            <div class="shoulder-line"></div>
-            <div class="center-dot"></div>
+    
+    <!-- WRAPPER BARU AGAR KAMERA TETAP DI TENGAH & TIDAK MELEBAR -->
+    <div class="camera-wrapper">
+        <div class="camera-section">
+            <div class="look-here-indicator">⬆️ TATAP KAMERA ⬆️</div>
+            <video id="video_monitor" autoplay playsinline></video>
+            
+            <img id="result_monitor" class="d-none" alt="Hasil Foto">
+            <div id="countdown-display" class="countdown-overlay d-none">3</div>
+            
+            <div class="guide-overlay">
+                <div class="face-oval"></div>
+                <div class="shoulder-line"></div>
+                <div class="center-dot"></div>
+            </div>
         </div>
     </div>
 
@@ -188,7 +212,6 @@
         const instructionBox = document.getElementById('status-instruction');
 
         if (type === 'verifikasi') {
-            // Pastikan kamera hidup dan gambar tersembunyi
             videoMonitor.classList.remove('d-none');
             resultMonitor.classList.add('d-none');
             guideOverlay.classList.remove('d-none');
@@ -230,7 +253,6 @@
             }
 
         } else if (type === 'countdown') {
-            // Jalankan animasi hitung mundur
             countdownEl.classList.remove('d-none');
             let count = 3;
             countdownEl.innerText = count;
@@ -249,22 +271,18 @@
             }, 1000);
 
         } else if (type === 'tersimpan') {
-            // Ubah Status
             statusCard.className = "status-card success";
             statusBadge.className = "status-badge badge-success";
             statusBadge.innerText = "✔ BERHASIL";
             namaBox.innerText = "Foto Selesai!";
             instructionBox.innerHTML = "<strong>Ini hasil foto Anda,<br>Pengambilan fisik KTM diumumkan kemudian</strong>";
             
-            // Ganti Video dengan Gambar Hasil
             videoMonitor.classList.add('d-none');
             guideOverlay.classList.add('d-none');
             lookHere.classList.add('d-none');
             
-            resultMonitor.src = data.image; // Menerima payload gambar base64
+            resultMonitor.src = data.image; 
             resultMonitor.classList.remove('d-none');
-            
-            // AUTO RESET DIHAPUS (Mempertahankan tampilan sampai NIM baru di-scan)
 
         } else if (type === 'reset') {
             videoMonitor.classList.remove('d-none');
