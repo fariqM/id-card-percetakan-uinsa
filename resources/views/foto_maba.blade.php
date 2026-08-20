@@ -11,7 +11,9 @@
         .app-container { max-width: 1000px; margin: 30px auto; padding: 0 15px; }
         
         .camera-box { position: relative; border: 4px solid #1e293b; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 3/4; width: 100%; max-width: 360px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        #video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        
+        /* Tampilan video normal, TIDAK ADA transform: scaleX(-1) agar logo almamater terbaca */
+        #video { width: 100%; height: 100%; object-fit: cover; }
         
         .results-preview { height: 250px; border: 2px dashed #cbd5e1; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #fff; overflow: hidden; position: relative; }
         
@@ -35,7 +37,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark mb-0">Panel Operator Capturing</h3>
-            <p class="text-muted small mb-0">Sistem ID Card Terpadu UIN Sunan Ampel 2026</p>
+            <p class="text-muted small mb-0">Sistem ID Card Terpadu UIN Sunan Ampel</p>
         </div>
         <button class="btn btn-primary fw-bold shadow-sm rounded-pill px-4" onclick="bukaMonitorMahasiswa()">
             🖥️ BUKA MONITOR MAHASISWA
@@ -66,6 +68,11 @@
                     <div class="input-group input-group-lg mb-3 shadow-sm">
                         <input type="text" id="nim" class="form-control border-primary" placeholder="Scan Barcode / Ketik NIM..." autofocus>
                         <button class="btn btn-primary px-4 fw-bold" onclick="cariData()">CEK DATA</button>
+                        
+                        <!-- TOMBOL BARU UNTUK MELIHAT HASIL LOKAL -->
+                        <button class="btn btn-dark px-3 fw-bold" onclick="lihatHasilLokal()" title="Lihat Foto Lokal">
+                            🔍 LIHAT
+                        </button>
                     </div>
                     
                     <div id="info-mahasiswa" class="p-3 bg-light rounded-3 border d-none">
@@ -103,6 +110,35 @@
     </div>
 </div>
 
+<!-- MODAL PRATINJAU FOTO LOKAL -->
+<div class="modal fade" id="modalPreviewFoto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+            <div class="modal-header bg-dark text-white border-0 py-2">
+                <h6 class="modal-title fw-bold mx-auto text-uppercase" style="letter-spacing: 1px;">Hasil Pemotretan</h6>
+                <button type="button" class="btn-close btn-close-white position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 bg-light text-center position-relative">
+                <div class="p-4">
+                    <img id="img-preview-lokal" src="" alt="Preview Lokal" class="img-fluid rounded shadow-sm" style="width: 100%; aspect-ratio: 3/4; object-fit: cover; display: none;" 
+                         onerror="this.style.display='none'; document.getElementById('error-preview-teks').style.display='block';">
+                    
+                    <div id="error-preview-teks" class="py-5" style="display: none;">
+                        <span class="fs-1">📭</span>
+                        <p class="text-muted fw-bold mt-2 mb-0">Foto Tidak Ditemukan</p>
+                        <p class="small text-secondary">NIM belum difoto atau belum tersimpan.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0 py-2 justify-content-center">
+                <span id="label-nim-modal" class="fw-bold text-dark font-monospace fs-5">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- AKHIR MODAL -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -147,9 +183,6 @@
                     logStatus.className = "mb-3 text-center small fw-bold text-primary";
                     logStatus.innerText = "MAHASISWA TERVERIFIKASI";
 
-                    // ==========================================
-                    // IMPLEMENTASI CACHE BUSTING DI SINI
-                    // ==========================================
                     const cacheBuster = new Date().getTime(); 
                     const existingPhotoUrl = `https://sinau.uinsa.ac.id/uploads/fotomhs/${nim}.jpg?v=${cacheBuster}`;
 
@@ -161,7 +194,6 @@
                         </div>
                     `;
 
-                    // PERBAIKAN: Menambahkan 'nim: nim' pada postMessage
                     bc.postMessage({ type: 'verifikasi', nama: data.nama, gender: data.gender, nim: nim });
                 } else {
                     alert("Info: " + data.message);
@@ -174,24 +206,22 @@
             });
     }
 
-	function takeSnap() {
+    function takeSnap() {
         btnCapture.disabled = true;
         
-        // Broadcast sinyal dimulainya hitung mundur ke layar monitor
         bc.postMessage({ type: 'countdown' });
         
         let count = 3;
         logStatus.className = "mb-3 text-center small fw-bold text-danger";
         logStatus.innerText = "MENGAMBIL FOTO (" + count + ")...";
 
-        // Interval untuk operator panel
         let cdInterval = setInterval(() => {
             count--;
             if(count > 0) {
                 logStatus.innerText = "MENGAMBIL FOTO (" + count + ")...";
             } else {
                 clearInterval(cdInterval);
-                executeCapture(); // Eksekusi foto tepat di detik 0
+                executeCapture(); 
             }
         }, 1000);
     }
@@ -202,8 +232,7 @@
         const sourceX = (video.videoWidth - sourceWidth) / 2;
 
         context.save();
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
+        // LOGIKA KANVAS NORMAL (Tanpa pembalikan horizontal agar foto terbaca benar)
         context.drawImage(video, sourceX, 0, sourceWidth, video.videoHeight, 0, 0, canvas.width, canvas.height);
         context.restore();
 
@@ -226,10 +255,7 @@
             logStatus.className = "mb-3 text-center small fw-bold text-success";
             logStatus.innerText = "✅ TERSIMPAN DI LOKAL";
             
-            // Broadcast bahwa foto selesai DAN kirim payload Base64 agar bisa dilihat mahasiswa
             bc.postMessage({ type: 'tersimpan', nim: nimInput.value, image: dataURL });
-
-            // FUNGSI AUTO-RESET DIHAPUS (Tampilan tertahan sampai input NIM baru dicari)
         });
     }
 
@@ -242,8 +268,32 @@
         logStatus.className = "mb-3 text-center small fw-bold text-uppercase";
         logStatus.innerText = "STANDBY";
         
-        // Memaksa layar monitor ikut ter-reset
         bc.postMessage({ type: 'reset' });
+    }
+
+    // FUNGSI UNTUK MENAMPILKAN MODAL PREVIEW FOTO LOKAL
+    function lihatHasilLokal() {
+        const nim = nimInput.value.trim();
+        if(!nim) { 
+            alert("Silakan ketik/scan NIM terlebih dahulu untuk melihat foto."); 
+            nimInput.focus();
+            return; 
+        }
+
+        document.getElementById('label-nim-modal').innerText = nim;
+        const imgEl = document.getElementById('img-preview-lokal');
+        const errEl = document.getElementById('error-preview-teks');
+        
+        imgEl.style.display = 'none';
+        errEl.style.display = 'none';
+
+        const cacheBuster = new Date().getTime();
+        imgEl.src = `{{ url('storage/app/public/foto_maba') }}/${nim}.jpg?v=${cacheBuster}`;
+        
+        imgEl.style.display = 'block';
+
+        const previewModal = new bootstrap.Modal(document.getElementById('modalPreviewFoto'));
+        previewModal.show();
     }
 </script>
 </body>
